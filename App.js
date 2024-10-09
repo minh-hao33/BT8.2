@@ -1,23 +1,28 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React, { useState, useEffect, createContext, useContext } from "react";
 import {
   StyleSheet,
   Text,
   View,
   TextInput,
-  Button,
+  TouchableOpacity,
   Alert,
   AppState,
 } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 
-const Stack = createStackNavigator();
+// Tạo PhoneContext để lưu số điện thoại
+const PhoneContext = createContext();
 
 // Màn hình Home
 const HomeScreen = () => {
+  const { phone } = useContext(PhoneContext); // Lấy số điện thoại từ context
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Chào mừng đến với Home Screen!</Text>
+      {/* Thay đổi văn bản hiển thị số điện thoại */}
+      <Text style={styles.label}>Bạn đã đăng nhập thành công với số điện thoại: {phone}</Text>
     </View>
   );
 };
@@ -25,25 +30,23 @@ const HomeScreen = () => {
 // Màn hình Đăng nhập
 const SignInScreen = ({ navigation }) => {
   const [phone, setPhone] = useState("");
+  const { setPhoneContext } = useContext(PhoneContext); // Hàm để cập nhật số điện thoại vào context
 
-  // Hàm kiểm tra số điện thoại có hợp lệ không
   const validatePhoneNumber = (phone) => {
     const phoneRegex = /^(09|03|07|08|05)\d{8}$/; // Số điện thoại Việt Nam hợp lệ
-    return phoneRegex.test(phone.replace(/\D/g, "")); // Loại bỏ ký tự không phải số và kiểm tra
+    return phoneRegex.test(phone.replace(/\D/g, ""));
   };
 
-  // Hàm xử lý khi nhấn nút "Tiếp tục"
   const handleContinue = () => {
     const cleanedPhone = phone.replace(/\D/g, ""); // Loại bỏ ký tự không phải số
     if (validatePhoneNumber(cleanedPhone)) {
-      // Điều hướng đến HomeScreen khi số điện thoại hợp lệ
-      navigation.navigate("Home");
+      setPhoneContext(cleanedPhone);
+      navigation.navigate("Home"); // Điều hướng đến HomeScreen
     } else {
       Alert.alert("Số điện thoại không hợp lệ!");
     }
   };
 
-  // Hàm tự động định dạng số điện thoại khi nhập
   const formatPhoneNumber = (input) => {
     const cleaned = input.replace(/\D/g, "");
     const formatted = cleaned
@@ -63,10 +66,12 @@ const SignInScreen = ({ navigation }) => {
         style={styles.input}
         placeholder="Nhập số điện thoại của bạn"
         keyboardType="numeric"
-        value={formatPhoneNumber(phone)} // Tự động format số điện thoại khi nhập
-        onChangeText={(text) => setPhone(text)} // Cập nhật state khi nhập
+        value={formatPhoneNumber(phone)}
+        onChangeText={(text) => setPhone(text)}
       />
-      <Button title="Tiếp tục" onPress={handleContinue} />
+      <TouchableOpacity style={styles.button} onPress={handleContinue}>
+        <Text style={styles.buttonText}>Tiếp tục</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -74,11 +79,9 @@ const SignInScreen = ({ navigation }) => {
 // Component chính
 const App = () => {
   const [appState, setAppState] = useState(AppState.currentState);
+  const [phone, setPhoneContext] = useState(""); // State để lưu số điện thoại toàn cục
 
   useEffect(() => {
-    // Hiển thị thông báo chỉ một lần khi ứng dụng được mở
-    Alert.alert("Chào mừng bạn đến với ứng dụng!");
-
     // Lắng nghe sự thay đổi của AppState (foreground/background)
     const subscription = AppState.addEventListener("change", (nextAppState) => {
       setAppState(nextAppState);
@@ -91,31 +94,37 @@ const App = () => {
   }, []);
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="SignIn">
-        <Stack.Screen name="SignIn" component={SignInScreen} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <PhoneContext.Provider value={{ phone, setPhoneContext }}>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="SignIn">
+          <Stack.Screen name="SignIn" component={SignInScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </PhoneContext.Provider>
   );
 };
+
+const Stack = createStackNavigator();
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f9f9f9",
     padding: 20,
     justifyContent: "center",
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
     marginBottom: 20,
-    textAlign: "left", // Chữ "Đăng nhập" nằm phía trái màn hình
+    textAlign: "left",
+    color: "#333",
   },
   label: {
     fontSize: 18,
     marginBottom: 10,
+    color: "#555",
   },
   description: {
     fontSize: 14,
@@ -129,6 +138,23 @@ const styles = StyleSheet.create({
     fontSize: 18,
     borderRadius: 5,
     marginBottom: 20,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  button: {
+    backgroundColor: "#a59dfa",
+    padding: 15,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });
 

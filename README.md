@@ -3,5 +3,5 @@
 - **Mã SV**: BIT220052
 
 ## Ảnh Chụp Màn Hình
-![alt](home-screen.jpg)
 ![alt](signin-screen.jpg)
+![alt](home-screen.jpg)
